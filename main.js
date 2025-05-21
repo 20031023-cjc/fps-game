@@ -13,68 +13,19 @@ init();
 animate();
 
 function init() {
+  // 场景和相机
   scene = new THREE.Scene();
-
   camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-  controls = new PointerLockControls(camera, document.body);
+
+  // 渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  // 贴图加载
-  const loader = new THREE.TextureLoader();
-  const wallTexture = loader.load('assets/textures/wall.jpg');  // 确认路径正确
-  const groundTexture = loader.load('assets/textures/ground.jpg');  // 确认路径正确
-  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-  groundTexture.repeat.set(10, 10);
-
-  // 地面
-  const floorGeometry = new THREE.PlaneGeometry(200, 200);
-  const floorMaterial = new THREE.MeshBasicMaterial({ map: groundTexture });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2;
-  scene.add(floor);
-
-  // 墙壁
-  const wallHeight = 10;
-  const wallThickness = 1;
-  const wallLength = 200;
-
-  const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallThickness);
-  const wallMaterial = new THREE.MeshBasicMaterial({ map: wallTexture });
-
-  const walls = [];
-  const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
-  wall1.position.set(0, wallHeight/2, -wallLength/2);
-  scene.add(wall1);
-  walls.push(wall1);
-
-  const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
-  wall2.position.set(0, wallHeight/2, wallLength/2);
-  scene.add(wall2);
-  walls.push(wall2);
-
-  const wallSideGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, wallLength);
-  const wall3 = new THREE.Mesh(wallSideGeometry, wallMaterial);
-  wall3.position.set(-wallLength/2, wallHeight/2, 0);
-  scene.add(wall3);
-  walls.push(wall3);
-
-  const wall4 = new THREE.Mesh(wallSideGeometry, wallMaterial);
-  wall4.position.set(wallLength/2, wallHeight/2, 0);
-  scene.add(wall4);
-  walls.push(wall4);
-
-  walls.forEach(w => objects.push(w));
-
-  // 灯光
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(1, 1, 1);
-  scene.add(light);
-
-  // 控制器，用导入的 PointerLockControls
+  // 控制器，确保PointerLockControls已正确引入
   controls = new PointerLockControls(camera, document.body);
 
+  // 设置点击锁定鼠标
   const blocker = document.getElementById('blocker');
   blocker.addEventListener('click', () => {
     controls.lock();
@@ -88,59 +39,75 @@ function init() {
     blocker.style.display = 'flex';
   });
 
+  // 把控制器的对象加入场景，控制相机移动
   scene.add(controls.getObject());
 
-  // 键盘事件
-  const onKeyDown = function (event) {
-    switch(event.code) {
-      case 'ArrowUp':
-      case 'KeyW':
-        moveForward = true;
-        break;
-      case 'ArrowLeft':
-      case 'KeyA':
-        moveLeft = true;
-        break;
-      case 'ArrowDown':
-      case 'KeyS':
-        moveBackward = true;
-        break;
-      case 'ArrowRight':
-      case 'KeyD':
-        moveRight = true;
-        break;
-    }
-  };
+  // 加载纹理
+  const loader = new THREE.TextureLoader();
+  const wallTexture = loader.load('assets/textures/wall.jpg');
+  const groundTexture = loader.load('assets/textures/ground.jpg');
+  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+  groundTexture.repeat.set(10, 10);
 
-  const onKeyUp = function(event) {
-    switch(event.code) {
-      case 'ArrowUp':
-      case 'KeyW':
-        moveForward = false;
-        break;
-      case 'ArrowLeft':
-      case 'KeyA':
-        moveLeft = false;
-        break;
-      case 'ArrowDown':
-      case 'KeyS':
-        moveBackward = false;
-        break;
-      case 'ArrowRight':
-      case 'KeyD':
-        moveRight = false;
-        break;
-    }
-  };
+  // 地面
+  const floorGeometry = new THREE.PlaneGeometry(200, 200);
+  const floorMaterial = new THREE.MeshBasicMaterial({ map: groundTexture });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
 
+  // 墙壁参数
+  const wallHeight = 10;
+  const wallThickness = 1;
+  const wallLength = 200;
+
+  const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallThickness);
+  const wallMaterial = new THREE.MeshBasicMaterial({ map: wallTexture });
+
+  // 创建四堵墙
+  const walls = [];
+
+  const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
+  wall1.position.set(0, wallHeight / 2, -wallLength / 2);
+  scene.add(wall1);
+  walls.push(wall1);
+
+  const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
+  wall2.position.set(0, wallHeight / 2, wallLength / 2);
+  scene.add(wall2);
+  walls.push(wall2);
+
+  const wallSideGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, wallLength);
+
+  const wall3 = new THREE.Mesh(wallSideGeometry, wallMaterial);
+  wall3.position.set(-wallLength / 2, wallHeight / 2, 0);
+  scene.add(wall3);
+  walls.push(wall3);
+
+  const wall4 = new THREE.Mesh(wallSideGeometry, wallMaterial);
+  wall4.position.set(wallLength / 2, wallHeight / 2, 0);
+  scene.add(wall4);
+  walls.push(wall4);
+
+  // 添加墙壁到碰撞物体数组
+  walls.forEach(wall => objects.push(wall));
+
+  // 简单光源
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(1, 1, 1);
+  scene.add(light);
+
+  // 键盘事件监听
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
 
   // 鼠标点击射击
   document.addEventListener('click', shoot);
 
-  // 添加简单敌人
-  spawnEnemy();
+  // 生成初始敌人
+  for(let i=0; i<5; i++) {
+    spawnEnemy();
+  }
 
   window.addEventListener('resize', onWindowResize);
 }
@@ -149,6 +116,48 @@ function onWindowResize() {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function onKeyDown(event) {
+  switch(event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      moveForward = true;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      moveLeft = true;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      moveBackward = true;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      moveRight = true;
+      break;
+  }
+}
+
+function onKeyUp(event) {
+  switch(event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      moveForward = false;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      moveLeft = false;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      moveBackward = false;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      moveRight = false;
+      break;
+  }
 }
 
 function animate() {
@@ -182,11 +191,10 @@ function shoot() {
 
   bullet.position.copy(controls.getObject().position);
 
+  // 子弹速度方向，摄像头方向前方
   const vector = new THREE.Vector3(0, 0, -1);
   vector.applyQuaternion(camera.quaternion);
-  bullet.userData = {
-    velocity: vector.multiplyScalar(50)
-  };
+  bullet.userData.velocity = vector.multiplyScalar(50);
 
   scene.add(bullet);
   bullets.push(bullet);
@@ -224,24 +232,18 @@ function spawnEnemy() {
 
   const dist = 80;
   const angle = Math.random() * Math.PI * 2;
-  enemy.position.set(Math.cos(angle) * dist, 1, Math.sin(angle) * dist);
+  enemy.position.set(Math.cos(angle)*dist, 1, Math.sin(angle)*dist);
 
   scene.add(enemy);
   enemies.push(enemy);
 }
 
 function updateEnemies(delta) {
+  const speed = 10;
   enemies.forEach(enemy => {
-    const playerPos = controls.getObject().position;
-    const dir = new THREE.Vector3().subVectors(playerPos, enemy.position).normalize();
-    enemy.position.addScaledVector(dir, delta * 5);
-
-    if (enemy.position.distanceTo(playerPos) < 1) {
-      // 游戏失败逻辑这里留空
-    }
+    // 敌人向玩家方向移动
+    const dir = new THREE.Vector3();
+    dir.subVectors(controls.getObject().position, enemy.position).normalize();
+    enemy.position.addScaledVector(dir, speed * delta);
   });
-
-  if (enemies.length < 5) {
-    spawnEnemy();
-  }
 }
