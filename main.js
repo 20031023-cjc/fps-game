@@ -23,8 +23,9 @@ function init() {
 
   // 贴图加载
   const loader = new THREE.TextureLoader();
-  const wallTexture = loader.load('assets/wall.jpg');
-  const groundTexture = loader.load('assets/ground.jpg');
+const wallTexture = loader.load('assets/texture/wall.jpg');
+const groundTexture = loader.load('assets/texture/ground.jpg');
+
   groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
   groundTexture.repeat.set(10, 10);
 
