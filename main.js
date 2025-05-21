@@ -23,9 +23,8 @@ function init() {
 
   // 贴图加载
   const loader = new THREE.TextureLoader();
-const wallTexture = loader.load('assets/texture/wall.jpg');
-const groundTexture = loader.load('assets/texture/ground.jpg');
-
+  const wallTexture = loader.load('assets/texture/wall.jpg');
+  const groundTexture = loader.load('assets/texture/ground.jpg');
   groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
   groundTexture.repeat.set(10, 10);
 
@@ -243,10 +242,9 @@ function updateEnemies(delta) {
     const dir = new THREE.Vector3().subVectors(playerPos, enemy.position).normalize();
     enemy.position.addScaledVector(dir, delta * 5);
 
-    // 简单碰撞检测防止穿墙（可以自己加更复杂碰撞）
-    // 如果靠太近玩家，停止移动
+    // 简单碰撞检测防止穿墙
     if (enemy.position.distanceTo(playerPos) < 1) {
-      // 你可以写游戏失败逻辑，这里先不写
+      // 这里可以写游戏失败逻辑
     }
   });
 
