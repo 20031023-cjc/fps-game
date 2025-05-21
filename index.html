@@ -1,16 +1,31 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>FPS Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FPS with Shooting and AI</title>
   <style>
-    body, html { margin: 0; height: 100%; overflow: hidden; }
-    canvas { display: block; }
+    body { margin: 0; overflow: hidden; }
+    #instructions {
+      position: absolute;
+      top: 50%;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      user-select: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
-  <script type="module" src="main.js"></script>
+  <div id="instructions">
+    クリックしてFPSを開始 (Click to start FPS)
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/PointerLockControls.js"></script>
+  <script src="main.js"></script>
 </body>
 </html>
