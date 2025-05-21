@@ -1,94 +1,148 @@
-import * as THREE from 'three';
-import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
-
 let camera, scene, renderer, controls;
+let objects = [];
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 let velocity = new THREE.Vector3();
 let direction = new THREE.Vector3();
-const objects = [];
+
+const clock = new THREE.Clock();
+
 const bullets = [];
 const enemies = [];
-const clock = new THREE.Clock();
 
 init();
 animate();
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xa0a0a0);
 
   camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-  camera.position.y = 1.6;
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  controls = new PointerLockControls(camera, document.body);
-  const instructions = document.getElementById('instructions');
-  instructions.addEventListener('click', () => controls.lock());
-  controls.addEventListener('lock', () => instructions.style.display = 'none');
-  controls.addEventListener('unlock', () => instructions.style.display = '');
+  // 贴图加载
+  const loader = new THREE.TextureLoader();
+  const wallTexture = loader.load('assets/wall.jpg');
+  const groundTexture = loader.load('assets/ground.jpg');
+  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+  groundTexture.repeat.set(10, 10);
+
+  // 地面
+  const floorGeometry = new THREE.PlaneGeometry(200, 200);
+  const floorMaterial = new THREE.MeshBasicMaterial({ map: groundTexture });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  // 墙壁
+  const wallHeight = 10;
+  const wallThickness = 1;
+  const wallLength = 200;
+
+  const wallGeometry = new THREE.BoxGeometry(wallLength, wallHeight, wallThickness);
+  const wallMaterial = new THREE.MeshBasicMaterial({ map: wallTexture });
+
+  const walls = [];
+  const wall1 = new THREE.Mesh(wallGeometry, wallMaterial);
+  wall1.position.set(0, wallHeight/2, -wallLength/2);
+  scene.add(wall1);
+  walls.push(wall1);
+
+  const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
+  wall2.position.set(0, wallHeight/2, wallLength/2);
+  scene.add(wall2);
+  walls.push(wall2);
+
+  const wallSideGeometry = new THREE.BoxGeometry(wallThickness, wallHeight, wallLength);
+  const wall3 = new THREE.Mesh(wallSideGeometry, wallMaterial);
+  wall3.position.set(-wallLength/2, wallHeight/2, 0);
+  scene.add(wall3);
+  walls.push(wall3);
+
+  const wall4 = new THREE.Mesh(wallSideGeometry, wallMaterial);
+  wall4.position.set(wallLength/2, wallHeight/2, 0);
+  scene.add(wall4);
+  walls.push(wall4);
+
+  walls.forEach(w => objects.push(w));
+
+  // 灯光
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(1, 1, 1);
+  scene.add(light);
+
+  // 控制器
+  controls = new THREE.PointerLockControls(camera, document.body);
+
+  const blocker = document.getElementById('blocker');
+  blocker.addEventListener('click', () => {
+    controls.lock();
+  });
+
+  controls.addEventListener('lock', () => {
+    blocker.style.display = 'none';
+  });
+
+  controls.addEventListener('unlock', () => {
+    blocker.style.display = 'flex';
+  });
 
   scene.add(controls.getObject());
 
-  // Lights
-  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444);
-  hemiLight.position.set(0, 20, 0);
-  scene.add(hemiLight);
+  // 键盘事件
+  const onKeyDown = function (event) {
+    switch(event.code) {
+      case 'ArrowUp':
+      case 'KeyW':
+        moveForward = true;
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        moveLeft = true;
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        moveBackward = true;
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        moveRight = true;
+        break;
+    }
+  };
 
-  const dirLight = new THREE.DirectionalLight(0xffffff);
-  dirLight.position.set(0, 20, 10);
-  scene.add(dirLight);
-
-  // Floor
-  const floorTexture = new THREE.TextureLoader().load('assets/ground.jpg');
-  floorTexture.wrapS = floorTexture.wrapT = THREE.RepeatWrapping;
-  floorTexture.repeat.set(10, 10);
-  const floorMaterial = new THREE.MeshStandardMaterial({ map: floorTexture });
-  const floorGeometry = new THREE.PlaneGeometry(200, 200);
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  floor.rotation.x = -Math.PI / 2;
-  floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Walls
-  const wallTexture = new THREE.TextureLoader().load('assets/wall.jpg');
-  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-  wallTexture.repeat.set(1, 1);
-  const wallMaterial = new THREE.MeshStandardMaterial({ map: wallTexture });
-
-  const boxGeometry = new THREE.BoxGeometry(2, 2, 0.2);
-  for(let i = -4; i <= 4; i++) {
-    const wall = new THREE.Mesh(boxGeometry, wallMaterial);
-    wall.position.set(i * 3, 1, -10);
-    scene.add(wall);
-    objects.push(wall);
-  }
-
-  // 简单敌人
-  createEnemy(new THREE.Vector3(0, 1, -5));
-  createEnemy(new THREE.Vector3(6, 1, -8));
+  const onKeyUp = function(event) {
+    switch(event.code) {
+      case 'ArrowUp':
+      case 'KeyW':
+        moveForward = false;
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        moveLeft = false;
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        moveBackward = false;
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        moveRight = false;
+        break;
+    }
+  };
 
   document.addEventListener('keydown', onKeyDown);
   document.addEventListener('keyup', onKeyUp);
-  document.addEventListener('mousedown', onMouseDown);
+
+  // 鼠标点击射击
+  document.addEventListener('click', shoot);
+
+  // 添加简单敌人
+  spawnEnemy();
 
   window.addEventListener('resize', onWindowResize);
-}
-
-function createEnemy(position) {
-  const enemyGeometry = new THREE.SphereGeometry(0.5, 16, 16);
-  const enemyMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-  const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
-  enemy.position.copy(position);
-  enemy.userData = { 
-    direction: 1, // 用于简单往返移动
-    speed: 1,
-    alive: true,
-  };
-  scene.add(enemy);
-  enemies.push(enemy);
 }
 
 function onWindowResize() {
@@ -97,77 +151,23 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-function onKeyDown(event) {
-  switch(event.code) {
-    case 'ArrowUp':
-    case 'KeyW': moveForward = true; break;
-    case 'ArrowLeft':
-    case 'KeyA': moveLeft = true; break;
-    case 'ArrowDown':
-    case 'KeyS': moveBackward = true; break;
-    case 'ArrowRight':
-    case 'KeyD': moveRight = true; break;
-  }
-}
-
-function onKeyUp(event) {
-  switch(event.code) {
-    case 'ArrowUp':
-    case 'KeyW': moveForward = false; break;
-    case 'ArrowLeft':
-    case 'KeyA': moveLeft = false; break;
-    case 'ArrowDown':
-    case 'KeyS': moveBackward = false; break;
-    case 'ArrowRight':
-    case 'KeyD': moveRight = false; break;
-  }
-}
-
-function onMouseDown(event) {
-  if (event.button === 0 && controls.isLocked) { // 左键
-    shoot();
-  }
-}
-
-function shoot() {
-  const bulletGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-  const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-  const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
-
-  const playerPos = controls.getObject().position.clone();
-  const playerDir = new THREE.Vector3();
-  camera.getWorldDirection(playerDir);
-
-  bullet.position.copy(playerPos);
-  bullet.position.y -= 0.3; // 从眼睛稍低点发射
-  bullet.userData = {
-    velocity: playerDir.multiplyScalar(50),
-    aliveTime: 0,
-  };
-
-  scene.add(bullet);
-  bullets.push(bullet);
-}
-
 function animate() {
   requestAnimationFrame(animate);
 
   const delta = clock.getDelta();
 
-  if (controls.isLocked) {
-    velocity.x -= velocity.x * 10.0 * delta;
-    velocity.z -= velocity.z * 10.0 * delta;
+  velocity.x -= velocity.x * 10.0 * delta;
+  velocity.z -= velocity.z * 10.0 * delta;
 
-    direction.z = Number(moveForward) - Number(moveBackward);
-    direction.x = Number(moveRight) - Number(moveLeft);
-    direction.normalize();
+  direction.z = Number(moveForward) - Number(moveBackward);
+  direction.x = Number(moveRight) - Number(moveLeft);
+  direction.normalize();
 
-    if(moveForward || moveBackward) velocity.z -= direction.z * 50.0 * delta;
-    if(moveLeft || moveRight) velocity.x -= direction.x * 50.0 * delta;
+  if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+  if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
 
-    controls.moveRight(-velocity.x * delta);
-    controls.moveForward(-velocity.z * delta);
-  }
+  controls.moveRight(-velocity.x * delta);
+  controls.moveForward(-velocity.z * delta);
 
   updateBullets(delta);
   updateEnemies(delta);
@@ -175,31 +175,46 @@ function animate() {
   renderer.render(scene, camera);
 }
 
-function updateBullets(delta) {
-  for (let i = bullets.length -1; i >=0; i--) {
-    const bullet = bullets[i];
-    bullet.position.addScaledVector(bullet.userData.velocity, delta);
-    bullet.userData.aliveTime += delta;
+function shoot() {
+  const bulletGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+  const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
 
-    // 子弹最大存活3秒，超时删除
-    if (bullet.userData.aliveTime > 3) {
-      scene.remove(bullet);
+  // 子弹起点是相机位置
+  bullet.position.copy(controls.getObject().position);
+
+  // 子弹方向
+  const vector = new THREE.Vector3(0, 0, -1);
+  vector.applyQuaternion(camera.quaternion);
+  bullet.userData = {
+    velocity: vector.multiplyScalar(50)
+  };
+
+  scene.add(bullet);
+  bullets.push(bullet);
+}
+
+function updateBullets(delta) {
+  for(let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.position.addScaledVector(b.userData.velocity, delta);
+
+    // 子弹飞出范围移除
+    if (b.position.length() > 200) {
+      scene.remove(b);
       bullets.splice(i, 1);
       continue;
     }
 
-    // 碰撞检测：和敌人距离小于0.5则击中
-    for(let j = enemies.length -1; j >= 0; j--) {
+    // 检测和敌人碰撞
+    for(let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
-      if (!enemy.userData.alive) continue;
-
-      const dist = bullet.position.distanceTo(enemy.position);
-      if (dist < 0.5) {
-        enemy.userData.alive = false;
+      if (b.position.distanceTo(enemy.position) < 1) {
+        // 碰撞，移除敌人和子弹
         scene.remove(enemy);
         enemies.splice(j, 1);
 
-        scene.remove(bullet);
+        scene.remove(b);
         bullets.splice(i, 1);
         break;
       }
@@ -207,15 +222,35 @@ function updateBullets(delta) {
   }
 }
 
+function spawnEnemy() {
+  const enemyGeometry = new THREE.BoxGeometry(1, 2, 1);
+  const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+
+  // 随机生成在场地边缘
+  const dist = 80;
+  const angle = Math.random() * Math.PI * 2;
+  enemy.position.set(Math.cos(angle) * dist, 1, Math.sin(angle) * dist);
+
+  scene.add(enemy);
+  enemies.push(enemy);
+}
+
 function updateEnemies(delta) {
   enemies.forEach(enemy => {
-    if (!enemy.userData.alive) return;
+    const playerPos = controls.getObject().position;
+    const dir = new THREE.Vector3().subVectors(playerPos, enemy.position).normalize();
+    enemy.position.addScaledVector(dir, delta * 5);
 
-    // 简单左右往返走动
-    enemy.position.x += enemy.userData.speed * enemy.userData.direction * delta;
-
-    // 走到某范围换方向
-    if (enemy.position.x > 8) enemy.userData.direction = -1;
-    else if (enemy.position.x < -8) enemy.userData.direction = 1;
+    // 简单碰撞检测防止穿墙（可以自己加更复杂碰撞）
+    // 如果靠太近玩家，停止移动
+    if (enemy.position.distanceTo(playerPos) < 1) {
+      // 你可以写游戏失败逻辑，这里先不写
+    }
   });
+
+  // 如果敌人数量少，补充敌人
+  if (enemies.length < 5) {
+    spawnEnemy();
+  }
 }
