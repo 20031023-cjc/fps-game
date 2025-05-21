@@ -3,20 +3,18 @@ body {
   overflow: hidden;
   font-family: Arial, sans-serif;
   background: #000;
-  color: #fff;
-  user-select: none;
-}
-
-canvas {
-  display: block;
+  color: white;
 }
 
 #instructions {
   position: absolute;
   width: 100%;
-  text-align: center;
-  top: 40vh;
-  font-size: 24px;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.8);
+  font-size: 20px;
   cursor: pointer;
   user-select: none;
   z-index: 1;
