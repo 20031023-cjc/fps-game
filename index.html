@@ -1,38 +1,21 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>Three.js PointerLockControls Demo</title>
+  <title>FPS 完整版</title>
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: Arial, sans-serif;
-    }
+    body { margin: 0; overflow: hidden; }
     #blocker {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: white;
-      font-size: 24px;
-      user-select: none;
-      z-index: 10;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.7);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 24px; cursor: pointer;
+      user-select: none; z-index: 100;
     }
   </style>
 </head>
 <body>
-  <div id="blocker">点击屏幕以锁定鼠标，开始游戏</div>
-
-  <!-- 引入Three.js主库 -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <!-- 引入PointerLockControls -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/PointerLockControls.js"></script>
-  <!-- 引入你的主脚本 -->
-  <script src="main.js"></script>
+  <div id="blocker">点击这里开始控制<br>WASD移动，鼠标控制视角，点击射击</div>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
