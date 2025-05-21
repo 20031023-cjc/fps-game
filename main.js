@@ -1,190 +1,181 @@
-let camera, scene, renderer;
-let objects = [];
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
 
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
+let camera, scene, renderer, controls;
+const objects = [];
 
-let prevTime = performance.now();
+const move = { forward: false, backward: false, left: false, right: false };
 const velocity = new THREE.Vector3();
 const direction = new THREE.Vector3();
-
-let raycaster;
-let shootSound;
+let prevTime = performance.now();
 
 init();
 animate();
 
 function init() {
+  // Renderer
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  // Scene
   scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x88ccee);
 
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
+  // Camera
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
 
-  // 灯光
-  const light = new THREE.DirectionalLight(0xffffff, 1);
-  light.position.set(1, 1, 1).normalize();
-  scene.add(light);
+  // Controls
+  controls = new PointerLockControls(camera, document.body);
 
-  // 创建目标方块
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  cube.position.set(0, 0, -10);
-  scene.add(cube);
-  objects.push(cube);
-
-  raycaster = new THREE.Raycaster();
-
-  setupControls();
-
-  window.addEventListener('resize', onWindowResize, false);
-
-  // 射击事件监听
-  document.addEventListener('click', onShoot, false);
-}
-
-let pitchObject = new THREE.Object3D();
-let yawObject = new THREE.Object3D();
-yawObject.position.y = 1.6;
-yawObject.add(pitchObject);
-pitchObject.add(camera);
-
-let PI_2 = Math.PI / 2;
-
-function onMouseMove(event) {
-  const movementX = event.movementX || 0;
-  const movementY = event.movementY || 0;
-
-  yawObject.rotation.y -= movementX * 0.002;
-  pitchObject.rotation.x -= movementY * 0.002;
-  pitchObject.rotation.x = Math.max(-PI_2, Math.min(PI_2, pitchObject.rotation.x));
-}
-
-function setupControls() {
-  document.body.requestPointerLock =
-    document.body.requestPointerLock ||
-    document.body.mozRequestPointerLock ||
-    document.body.webkitRequestPointerLock;
-
-  document.body.addEventListener('click', () => {
-    document.body.requestPointerLock();
+  const instructions = document.getElementById('instructions');
+  instructions.addEventListener('click', () => {
+    controls.lock();
   });
 
-  document.addEventListener('pointerlockchange', lockChange, false);
-  document.addEventListener('mozpointerlockchange', lockChange, false);
-  document.addEventListener('webkitpointerlockchange', lockChange, false);
+  controls.addEventListener('lock', () => {
+    instructions.style.display = 'none';
+  });
 
-  function lockChange() {
-    if (
-      document.pointerLockElement === document.body ||
-      document.mozPointerLockElement === document.body ||
-      document.webkitPointerLockElement === document.body
-    ) {
-      document.addEventListener('mousemove', onMouseMove, false);
-      document.addEventListener('keydown', onKeyDown, false);
-      document.addEventListener('keyup', onKeyUp, false);
-    } else {
-      document.removeEventListener('mousemove', onMouseMove, false);
-      document.removeEventListener('keydown', onKeyDown, false);
-      document.removeEventListener('keyup', onKeyUp, false);
-    }
-  }
+  controls.addEventListener('unlock', () => {
+    instructions.style.display = '';
+  });
+
+  scene.add(controls.getObject());
+
+  // Light
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(1, 1, 1);
+  scene.add(light);
+
+  // Textures
+  const loader = new THREE.TextureLoader();
+
+  const groundTexture = loader.load('ground.jpg');
+  groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
+  groundTexture.repeat.set(10, 10);
+
+  const wallTexture = loader.load('wall.jpg');
+  wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
+  wallTexture.repeat.set(1, 1);
+
+  // Ground
+  const groundMaterial = new THREE.MeshPhongMaterial({ map: groundTexture });
+  const groundGeometry = new THREE.PlaneGeometry(200, 200);
+  const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+  objects.push(ground);
+
+  // Walls (简单四面墙)
+  const wallHeight = 10;
+  const wallThickness = 1;
+  const wallLength = 200;
+
+  const wallMaterial = new THREE.MeshPhongMaterial({ map: wallTexture });
+
+  // 四个墙壁，分别放置
+  const wall1 = new THREE.Mesh(new THREE.BoxGeometry(wallLength, wallHeight, wallThickness), wallMaterial);
+  wall1.position.set(0, wallHeight/2, -wallLength/2);
+  scene.add(wall1);
+  objects.push(wall1);
+
+  const wall2 = new THREE.Mesh(new THREE.BoxGeometry(wallLength, wallHeight, wallThickness), wallMaterial);
+  wall2.position.set(0, wallHeight/2, wallLength/2);
+  scene.add(wall2);
+  objects.push(wall2);
+
+  const wall3 = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, wallLength), wallMaterial);
+  wall3.position.set(-wallLength/2, wallHeight/2, 0);
+  scene.add(wall3);
+  objects.push(wall3);
+
+  const wall4 = new THREE.Mesh(new THREE.BoxGeometry(wallThickness, wallHeight, wallLength), wallMaterial);
+  wall4.position.set(wallLength/2, wallHeight/2, 0);
+  scene.add(wall4);
+  objects.push(wall4);
+
+  // 监听窗口大小变化
+  window.addEventListener('resize', onWindowResize);
+
+  // 键盘事件
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onKeyUp);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function onKeyDown(event) {
-  switch (event.code) {
+  switch(event.code) {
     case 'ArrowUp':
     case 'KeyW':
-      moveForward = true;
+      move.forward = true;
       break;
     case 'ArrowLeft':
     case 'KeyA':
-      moveLeft = true;
+      move.left = true;
       break;
     case 'ArrowDown':
     case 'KeyS':
-      moveBackward = true;
+      move.backward = true;
       break;
     case 'ArrowRight':
     case 'KeyD':
-      moveRight = true;
+      move.right = true;
       break;
   }
 }
 
 function onKeyUp(event) {
-  switch (event.code) {
+  switch(event.code) {
     case 'ArrowUp':
     case 'KeyW':
-      moveForward = false;
+      move.forward = false;
       break;
     case 'ArrowLeft':
     case 'KeyA':
-      moveLeft = false;
+      move.left = false;
       break;
     case 'ArrowDown':
     case 'KeyS':
-      moveBackward = false;
+      move.backward = false;
       break;
     case 'ArrowRight':
     case 'KeyD':
-      moveRight = false;
+      move.right = false;
       break;
   }
-}
-
-function onShoot() {
-  // 从摄像机位置沿着摄像机前方发射射线
-  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-
-  const intersects = raycaster.intersectObjects(objects);
-
-  if (intersects.length > 0) {
-    const hit = intersects[0].object;
-    console.log("击中目标！");
-
-    // 改变颜色表示被击中
-    hit.material.color.set(0xff0000);
-  }
-}
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 function animate() {
   requestAnimationFrame(animate);
 
-  const time = performance.now();
-  const delta = (time - prevTime) / 1000;
+  if (controls.isLocked === true) {
+    const time = performance.now();
+    const delta = (time - prevTime) / 1000;
 
-  velocity.x -= velocity.x * 10.0 * delta;
-  velocity.z -= velocity.z * 10.0 * delta;
+    velocity.x -= velocity.x * 10.0 * delta;
+    velocity.z -= velocity.z * 10.0 * delta;
 
-  direction.z = Number(moveForward) - Number(moveBackward);
-  direction.x = Number(moveRight) - Number(moveLeft);
-  direction.normalize();
+    direction.z = Number(move.forward) - Number(move.backward);
+    direction.x = Number(move.right) - Number(move.left);
+    direction.normalize();
 
-  if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-  if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+    const speed = 400.0;
 
-  yawObject.translateX(velocity.x * delta);
-  yawObject.translateZ(velocity.z * delta);
+    if (move.forward || move.backward) velocity.z -= direction.z * speed * delta;
+    if (move.left || move.right) velocity.x -= direction.x * speed * delta;
 
-  prevTime = time;
+    controls.moveRight(-velocity.x * delta);
+    controls.moveForward(-velocity.z * delta);
+
+    prevTime = time;
+  }
 
   renderer.render(scene, camera);
 }
