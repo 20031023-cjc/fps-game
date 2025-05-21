@@ -166,3 +166,12 @@ function respawnEnemy() {
         (Math.random() - 0.5) * 100
     );
 }
+setInterval(() => {
+    timer--;
+    document.getElementById('timer').textContent = timer;
+    if (timer <= 0) {
+        alert(`ゲーム終了！得点：${score}`);
+        location.reload();
+    }
+}, 1000);
+
