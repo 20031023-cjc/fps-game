@@ -16,7 +16,7 @@ scene.background = new THREE.Color(0x000000);
 
 // カメラ設定
 camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 1, 1000);
-camera.position.set(0, 10, 50); // 初期位置を外に出す
+controls.getObject().position.set(0, 10, 50);
 
 // ライト
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -43,7 +43,6 @@ scene.add(enemy);
 // レンダラー
 renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("gameCanvas") });
 renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement); // 追加
 
 // コントロール
 controls = new THREE.PointerLockControls(camera, document.body);
