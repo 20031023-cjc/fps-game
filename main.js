@@ -48,7 +48,12 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 controls = new THREE.PointerLockControls(camera, document.body);
 scene.add(controls.getObject());
 
-document.body.addEventListener('click', () => controls.lock(), false);
+const instructions = document.getElementById('instructions');
+
+instructions.addEventListener('click', () => {
+  controls.lock();  // 触发锁定鼠标
+  instructions.style.display = 'none';  // 隐藏提示文字
+});
 controls.addEventListener('lock', () => console.log("Pointer locked"));
 controls.addEventListener('unlock', () => console.log("Pointer unlocked"));
 
