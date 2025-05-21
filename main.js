@@ -1,6 +1,5 @@
-// 只改这两行导入，确保你用ES模块
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
-import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
+const controls = new THREE.PointerLockControls(camera, document.body);
+
 
 let camera, scene, renderer, controls;
 let objects = [];
