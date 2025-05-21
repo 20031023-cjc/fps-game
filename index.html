@@ -1,19 +1,16 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>Simple FPS Game</title>
+  <title>FPS Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/PointerLockControls.js"></script>
+  <style>
+    body, html { margin: 0; height: 100%; overflow: hidden; }
+    canvas { display: block; }
+  </style>
 </head>
 <body>
-  <div id="instructions">
-    クリックしてゲーム開始<br />
-    W/A/S/D: 移動<br />
-    マウス移動: 視点操作
-  </div>
-  <script src="main.js"></script>
+  <script type="module" src="main.js"></script>
 </body>
 </html>
