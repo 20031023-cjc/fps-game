@@ -1,3 +1,7 @@
+// 只改这两行导入，确保你用ES模块
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+import { PointerLockControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/PointerLockControls.js';
+
 let camera, scene, renderer, controls;
 let objects = [];
 let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
@@ -23,8 +27,8 @@ function init() {
 
   // 贴图加载
   const loader = new THREE.TextureLoader();
-  const wallTexture = loader.load('assets/texture/wall.jpg');
-  const groundTexture = loader.load('assets/texture/ground.jpg');
+  const wallTexture = loader.load('assets/texture/wall.jpg');  // 确认路径正确
+  const groundTexture = loader.load('assets/texture/ground.jpg');  // 确认路径正确
   groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
   groundTexture.repeat.set(10, 10);
 
@@ -72,8 +76,8 @@ function init() {
   light.position.set(1, 1, 1);
   scene.add(light);
 
-  // 控制器
-  controls = new THREE.PointerLockControls(camera, document.body);
+  // 控制器，用导入的 PointerLockControls
+  controls = new PointerLockControls(camera, document.body);
 
   const blocker = document.getElementById('blocker');
   blocker.addEventListener('click', () => {
@@ -180,10 +184,8 @@ function shoot() {
   const bulletMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
   const bullet = new THREE.Mesh(bulletGeometry, bulletMaterial);
 
-  // 子弹起点是相机位置
   bullet.position.copy(controls.getObject().position);
 
-  // 子弹方向
   const vector = new THREE.Vector3(0, 0, -1);
   vector.applyQuaternion(camera.quaternion);
   bullet.userData = {
@@ -199,18 +201,15 @@ function updateBullets(delta) {
     const b = bullets[i];
     b.position.addScaledVector(b.userData.velocity, delta);
 
-    // 子弹飞出范围移除
     if (b.position.length() > 200) {
       scene.remove(b);
       bullets.splice(i, 1);
       continue;
     }
 
-    // 检测和敌人碰撞
     for(let j = enemies.length - 1; j >= 0; j--) {
       const enemy = enemies[j];
       if (b.position.distanceTo(enemy.position) < 1) {
-        // 碰撞，移除敌人和子弹
         scene.remove(enemy);
         enemies.splice(j, 1);
 
@@ -227,7 +226,6 @@ function spawnEnemy() {
   const enemyMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
   const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
 
-  // 随机生成在场地边缘
   const dist = 80;
   const angle = Math.random() * Math.PI * 2;
   enemy.position.set(Math.cos(angle) * dist, 1, Math.sin(angle) * dist);
@@ -242,13 +240,11 @@ function updateEnemies(delta) {
     const dir = new THREE.Vector3().subVectors(playerPos, enemy.position).normalize();
     enemy.position.addScaledVector(dir, delta * 5);
 
-    // 简单碰撞检测防止穿墙
     if (enemy.position.distanceTo(playerPos) < 1) {
-      // 这里可以写游戏失败逻辑
+      // 游戏失败逻辑这里留空
     }
   });
 
-  // 如果敌人数量少，补充敌人
   if (enemies.length < 5) {
     spawnEnemy();
   }
